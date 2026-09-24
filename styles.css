@@ -648,7 +648,7 @@ p{margin:0 0 1em;color:var(--ink-soft);max-width:62ch;}
   width: 100%;
   border-radius: 26px; /* Borda bem arredondada */
   border: 6px solid #1A1A1A; /* Carcaça escura do aparelho */
-  background: repeating-linear-gradient(135deg, #F1ECDE, #F1ECDE 10px, var(--paper-card) 10px, var(--paper-card) 20px);
+  background: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
