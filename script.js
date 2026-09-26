@@ -130,9 +130,14 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     var dots = Array.prototype.slice.call(dotsWrap.children);
 
-    function slideWidth(){
-      return slides[0] ? slides[0].getBoundingClientRect().width + 20 : 260;
-    }
+   var cachedWidth = null;
+function slideWidth(){
+  if (cachedWidth === null && slides[0]) {
+    cachedWidth = slides[0].getBoundingClientRect().width + 20;
+  }
+  return cachedWidth || 260;
+}
+window.addEventListener('resize', function(){ cachedWidth = null; });
     prev.addEventListener('click', function(){
       track.scrollBy({left: -slideWidth(), behavior:'smooth'});
     });
