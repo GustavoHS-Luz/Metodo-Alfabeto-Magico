@@ -24,9 +24,18 @@
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
 if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
+n.queue=[];
+function loadPixel(){
+  t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s);
+}
+if('requestIdleCallback' in f){
+  f.requestIdleCallback(loadPixel,{timeout:2000});
+} else {
+  f.addEventListener('load', loadPixel);
+}
+}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '1444327460889273');
 fbq('track', 'PageView');
@@ -55,7 +64,9 @@ src="https://www.facebook.com/tr?id=1444327460889273&ev=PageView&noscript=1"
         o mínimo de tinta (preto e branco) e devolver a concentração da sua criança — longe do celular.</p>
       <div class="hero-media">
         <img src="imgs/Mockop Site.webp"
-          alt="Apostilas impressas do Método Alfabeto Mágico sobre a mesa, com lápis de cor e o Quadro de Incentivos">
+  alt="Apostilas impressas do Método Alfabeto Mágico sobre a mesa, com lápis de cor e o Quadro de Incentivos"
+  fetchpriority="high"
+  width="724" height="512">
         <span class="hero-badge hero-badge-bottom">Impressão econômica em preto e branco</span>
       </div>
       <div class="hero-actions">
