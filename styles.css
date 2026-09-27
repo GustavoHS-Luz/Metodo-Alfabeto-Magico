@@ -776,3 +776,20 @@ footer{padding:44px 0 36px;text-align:center;background:var(--ink);color:var(--c
 .footer-links{display:flex;justify-content:center;gap:18px;margin-bottom:16px;flex-wrap:wrap;font-size:.85rem;}
 .footer-links a:hover{color:#fff;}
 footer .fine{font-size:.8rem;margin:0;}
+
+.texto-garantia-botao {
+    display: block; 
+    width: 100%; /* Força o elemento a usar todo o espaço para poder centrar */
+    text-align: center; /* Centraliza o texto */
+    margin: 8px auto 0 auto; /* O 'auto' nas laterais garante a centralização absoluta */
+    font-size: 13px; 
+    color: #666666; 
+    font-family: 'Montserrat', 'Helvetica', sans-serif; 
+    line-height: 1.4; 
+    opacity: 0.9; 
+}
+
+.texto-garantia-botao strong {
+    color: #333333; 
+    font-weight: 700;
+}
