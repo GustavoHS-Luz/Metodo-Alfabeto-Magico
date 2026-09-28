@@ -1,158 +1,102 @@
-// Funcionalidade Completa do Carrossel de Demonstração (Setas + Bolinhas)
-document.addEventListener("DOMContentLoaded", function() {
-  var track = document.getElementById('demoTrack');
-  var prev = document.getElementById('demoPrev');
-  var next = document.getElementById('demoNext');
-  var dotsWrap = document.getElementById('demoDots');
-  
-  if(!track || !prev || !next || !dotsWrap) return;
+(function () {
+  'use strict';
 
-  // Pega todos os cards de fotos
-  var slides = Array.prototype.slice.call(track.querySelectorAll('.demo-card'));
-  
-  // 1. Cria as bolinhas dinamicamente
-  slides.forEach(function(_, i) {
-    var dot = document.createElement('button');
-    dot.className = 'demo-dot' + (i === 0 ? ' active' : '');
-    dot.setAttribute('aria-label', 'Ir para foto ' + (i + 1));
-    
-    // 2. Quando clica na bolinha, rola até o card correspondente
-    dot.addEventListener('click', function() {
-      slides[i].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    });
-    dotsWrap.appendChild(dot);
-  });
-  
-  var dots = Array.prototype.slice.call(dotsWrap.children);
+  /* ---------- Carrossel genérico (sem leituras de layout no scroll) ---------- */
+  function initCarousel(cfg) {
+    var track = document.getElementById(cfg.track);
+    var prev = document.getElementById(cfg.prev);
+    var next = document.getElementById(cfg.next);
+    var dotsWrap = document.getElementById(cfg.dots);
+    if (!track || !prev || !next || !dotsWrap) return;
 
-  // 3. Atualiza a bolinha ativa sempre que o carrossel rolar
-  var ticking = false;
-  track.addEventListener('scroll', function() {
-    if(ticking) return;
-    ticking = true;
-    requestAnimationFrame(function() {
-      var cardWidth = track.querySelector('.demo-card').offsetWidth;
-      // Calcula qual imagem está no centro baseado na rolagem
-      var idx = Math.round(track.scrollLeft / cardWidth);
-      
-      // Garante que o índice não quebre
-      if(idx >= dots.length) idx = dots.length - 1;
-      
-      dots.forEach(function(d, i) { 
-        d.classList.toggle('active', i === idx); 
-      });
-      ticking = false;
-    });
-  });
+    var slides = Array.prototype.slice.call(track.querySelectorAll(cfg.slide));
+    if (!slides.length) return;
 
-  // 4. Botão Voltar (Seta Esquerda)
-  prev.addEventListener('click', function(e) {
-    e.preventDefault();
-    var cardWidth = track.querySelector('.demo-card').offsetWidth; 
-    track.scrollBy({ left: -cardWidth, behavior: 'smooth' });
-  });
+    var slideWidth = 0; // atualizado pelo ResizeObserver
+    var current = 0;
+    var dots = [];
 
-  // 5. Botão Avançar (Seta Direita)
-  next.addEventListener('click', function(e) {
-    e.preventDefault();
-    var cardWidth = track.querySelector('.demo-card').offsetWidth; 
-    track.scrollBy({ left: cardWidth, behavior: 'smooth' });
-  });
-});
-
-// Carrossel do Temporizador da Oferta
-(function(){
-  var duration = 15 * 60;
-  var minEl = document.getElementById('min');
-  var secEl = document.getElementById('sec');
-  
-  function tick(){
-    if(duration <= 0){ 
-      minEl.textContent = "00"; 
-      secEl.textContent = "00"; 
-      return; 
-    }
-    var m = Math.floor(duration/60);
-    var s = duration%60;
-    
-    minEl.textContent = (m < 10 ? "0" : "") + m;
-    secEl.textContent = (s < 10 ? "0" : "") + s;
-    duration--;
-  }
-  
-  tick();
-  setInterval(tick, 1000);
-})();
-
-// Funcionalidade das Setas do Carrossel de Demonstração (1 por vez)
-(function(){
-  var track = document.getElementById('demoTrack');
-  var prev = document.getElementById('demoPrev');
-  var next = document.getElementById('demoNext');
-  
-  if(!track || !prev || !next) return;
-
-  // Botão Voltar (Seta Esquerda)
-  prev.addEventListener('click', function(){
-    track.scrollBy({ 
-      left: -track.clientWidth, // Volta exatamente 1 card
-      behavior: 'smooth' 
-    });
-  });
-
-  // Botão Avançar (Seta Direita)
-  next.addEventListener('click', function(){
-    track.scrollBy({ 
-      left: track.clientWidth, // Avança exatamente 1 card
-      behavior: 'smooth' 
-    });
-  });
-})();
-  
-  // Carrossel de depoimentos (prints do WhatsApp)
-  (function(){
-    var track = document.getElementById('testiTrack');
-    var prev = document.getElementById('testiPrev');
-    var next = document.getElementById('testiNext');
-    var dotsWrap = document.getElementById('testiDots');
-    if(!track) return;
-
-    var slides = Array.prototype.slice.call(track.children);
-
-    slides.forEach(function(_, i){
+    // Cria as bolinhas de uma vez só
+    var frag = document.createDocumentFragment();
+    slides.forEach(function (_, i) {
       var dot = document.createElement('button');
-      dot.className = 'testi-dot' + (i === 0 ? ' active' : '');
-      dot.setAttribute('aria-label', 'Ir para depoimento ' + (i + 1));
-      dot.addEventListener('click', function(){
-        slides[i].scrollIntoView({behavior:'smooth', inline:'start', block:'nearest'});
-      });
-      dotsWrap.appendChild(dot);
+      dot.type = 'button';
+      dot.className = cfg.dotClass + (i === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', cfg.label + ' ' + (i + 1));
+      dot.addEventListener('click', function () { goTo(i); });
+      frag.appendChild(dot);
+      dots.push(dot);
     });
-    var dots = Array.prototype.slice.call(dotsWrap.children);
+    dotsWrap.appendChild(frag);
 
-   var cachedWidth = null;
-function slideWidth(){
-  if (cachedWidth === null && slides[0]) {
-    cachedWidth = slides[0].getBoundingClientRect().width + 20;
+    function setActive(idx) {
+      if (idx === current || !dots[idx]) return;
+      dots[current].classList.remove('active');
+      dots[idx].classList.add('active');
+      current = idx;
+    }
+
+    function goTo(i) {
+      i = Math.max(0, Math.min(slides.length - 1, i));
+      var w = slideWidth || track.clientWidth; // fallback, só lido no clique
+      track.scrollTo({ left: i * w, behavior: 'smooth' });
+    }
+
+    prev.addEventListener('click', function (e) { e.preventDefault(); goTo(current - 1); });
+    next.addEventListener('click', function (e) { e.preventDefault(); goTo(current + 1); });
+
+    // Largura do slide: medida sem forçar reflow
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(function (entries) {
+        var entry = entries[0];
+        var box = entry.borderBoxSize && entry.borderBoxSize[0];
+        slideWidth = box ? box.inlineSize : entry.contentRect.width;
+      }).observe(slides[0]);
+    }
+
+    // Slide ativo: detectado sem ler geometria no scroll
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) setActive(slides.indexOf(entry.target));
+        });
+      }, { root: track, threshold: 0.6 });
+      slides.forEach(function (s) { io.observe(s); });
+    }
   }
-  return cachedWidth || 260;
-}
-window.addEventListener('resize', function(){ cachedWidth = null; });
-    prev.addEventListener('click', function(){
-      track.scrollBy({left: -slideWidth(), behavior:'smooth'});
-    });
-    next.addEventListener('click', function(){
-      track.scrollBy({left: slideWidth(), behavior:'smooth'});
-    });
 
-    var ticking = false;
-    track.addEventListener('scroll', function(){
-      if(ticking) return;
-      ticking = true;
-      requestAnimationFrame(function(){
-        var idx = Math.round(track.scrollLeft / slideWidth());
-        dots.forEach(function(d, i){ d.classList.toggle('active', i === idx); });
-        ticking = false;
-      });
-    });
-  })();
+  /* ---------- Temporizador da oferta ---------- */
+  function initTimer() {
+    var minEl = document.getElementById('min');
+    var secEl = document.getElementById('sec');
+    if (!minEl || !secEl) return;
+
+    var end = Date.now() + 15 * 60 * 1000;
+    var id;
+
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+    function tick() {
+      var left = Math.max(0, Math.round((end - Date.now()) / 1000));
+      minEl.textContent = pad(Math.floor(left / 60));
+      secEl.textContent = pad(left % 60);
+      if (left <= 0) clearInterval(id);
+    }
+
+    tick();
+    id = setInterval(tick, 1000);
+  }
+
+  /* ---------- Inicialização ---------- */
+  initCarousel({
+    track: 'demoTrack', prev: 'demoPrev', next: 'demoNext', dots: 'demoDots',
+    slide: '.demo-card', dotClass: 'demo-dot', label: 'Ir para foto'
+  });
+
+  initCarousel({
+    track: 'testiTrack', prev: 'testiPrev', next: 'testiNext', dots: 'testiDots',
+    slide: '.testi-slide', dotClass: 'testi-dot', label: 'Ir para depoimento'
+  });
+
+  initTimer();
+})();
